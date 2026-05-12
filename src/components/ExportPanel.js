@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { SHADES } from '../utils/generatePalette';
 
-export default function ExportPanel({ palette }) {
+function toPrefix(label) {
+  return label.toLowerCase().replace(/\s+/g, '-');
+}
+
+export default function ExportPanel({ palettes }) {
   const [copied, setCopied] = useState(false);
 
-  if (!palette) return null;
+  if (!palettes || palettes.length === 0) return null;
 
-  const cssVars = SHADES.map(shade => `  --color-${shade}: ${palette[shade]};`).join('\n');
-  const output = `:root {\n${cssVars}\n}`;
+  const blocks = palettes.map(({ label, palette }) => {
+    const prefix = toPrefix(label);
+    const vars = SHADES.map(shade => `  --${prefix}-${shade}: ${palette[shade]};`).join('\n');
+    return `  /* ${label} */\n${vars}`;
+  });
+
+  const output = `:root {\n${blocks.join('\n\n')}\n}`;
 
   function handleCopy() {
     navigator.clipboard.writeText(output).then(() => {
@@ -17,7 +26,7 @@ export default function ExportPanel({ palette }) {
   }
 
   return (
-    <div className="mt-8">
+    <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
           CSS Variables
